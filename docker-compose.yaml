@@ -1,0 +1,66 @@
+version: "3"
+services:
+  mysql:
+    image: mysql:8.0.36
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: chatnio
+      MYSQL_USER: chatnio
+      MYSQL_PASSWORD: chatnio123456!
+      TZ: Asia/Shanghai
+    expose:
+      - "3306"
+    volumes:
+      - ./db:/var/lib/mysql
+    networks:
+      - chatnio-network
+
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - ./redis:/data
+    networks:
+      - chatnio-network
+
+  chatnio:
+    image: programzmh/chatnio:latest
+    container_name: chatnio
+    restart: always
+    ports:
+      - "8000:8094"
+    depends_on:
+      - mysql
+      - redis
+    links:
+      - mysql
+      - redis
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: chatnio
+      MYSQL_PASSWORD: chatnio123456!
+      MYSQL_DB: chatnio
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+      SERVE_STATIC: "true"
+    volumes:
+      - ./config:/config
+      - ./logs:/logs
+      - ./storage:/storage
+    networks:
+      - chatnio-network
+
+networks:
+  chatnio-network:
+    driver: bridge
